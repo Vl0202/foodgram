@@ -12,7 +12,6 @@ from rest_framework.response import Response
 
 from recipes.paginations import PageLimitPagination
 from recipes.serializers import FavoriteSerializer
-
 from .models import Subscribe
 from .serializers import AvatarSerializer
 
