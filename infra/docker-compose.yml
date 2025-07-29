@@ -15,7 +15,7 @@ services:
     
   frontend:
     container_name: foodgram-front
-    build: ../frontend/
+    image: vovalee/foodgram_frontend
     volumes:
       - ../frontend/:/app/result_build/
       - static:/app/result_build/build/static
@@ -40,7 +40,7 @@ services:
   backend:
     container_name: foodgram-backend
     env_file: ../.env
-    build: ../backend/
+    image: vovalee/foodgram_backend
     volumes:
       - media:/app/media
     depends_on:
