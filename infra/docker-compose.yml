@@ -43,6 +43,7 @@ services:
     image: vovalee/foodgram_backend
     volumes:
       - media:/app/media
+      - static:/backend_static
     depends_on:
       - db
 
