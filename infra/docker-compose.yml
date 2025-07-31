@@ -32,7 +32,6 @@ services:
       - ../docs/:/usr/share/nginx/html/api/docs/
       - static:/usr/share/nginx/html/static
       - media:/usr/share/nginx/html/media
-      - static:/backend_static
     depends_on:
       - backend
       - frontend
@@ -44,7 +43,7 @@ services:
     image: vovalee/foodgram_backend
     volumes:
       - media:/app/media
-      - static:/backend_static
+      - static:/backend_static/static
     depends_on:
       - db
 
