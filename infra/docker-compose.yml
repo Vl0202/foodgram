@@ -42,7 +42,7 @@ services:
     env_file: ../.env
     image: vovalee/foodgram_backend
     volumes:
-      - static:/app/collected_static
+      - static:/backend_static
       - media:/app/media
     depends_on:
       - db
