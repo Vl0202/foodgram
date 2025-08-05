@@ -15,7 +15,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from urlshortner.utils import shorten_url
 
-from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Subscribe, Tag
+from recipes.models import (
+    Favorite, Ingredient,
+    Recipe, ShoppingCart,
+    Subscribe, Tag
+)
 from recipes.services import generate_shopping_list
 from ..api.filters import RecipeFilter
 from ..api.paginations import PageLimitPagination
@@ -72,29 +76,25 @@ class UserProfileViewSet(UserViewSet):
         methods=['POST', 'GET'],
         detail=True,
     )
-    @action(
-    methods=['POST', 'GET'],
-    detail=True,
-)
     def subscribe(self, request, id=None):
         following = get_object_or_404(User, id=id)
-    
+
         if request.method == 'POST':
             if Subscribe.objects.filter(
                 follower=request.user,
                 following=following,
             ).exists():
+                msg = f'Вы уже подписаны на {following.username}'
                 return Response(
-                    data={'errors': f'Вы уже подписаны на пользователя {following.username}'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {'errors': msg}, status=status.HTTP_400_BAD_REQUEST
                 )
-        
+
             Subscribe.objects.create(
                 follower=request.user,
                 following=following,
             )
             return Response(status=status.HTTP_201_CREATED)
-    
+
         elif request.method == 'GET':
             return Response(
                 data={'is_subscribed': Subscribe.objects.filter(
@@ -107,18 +107,18 @@ class UserProfileViewSet(UserViewSet):
     @subscribe.mapping.delete
     def del_subscribe(self, request, id=None):
         following = get_object_or_404(User, id=id)
-    
+
         if request.user == following:
             return Response(
                 data={'errors': 'Нельзя отписаться от себя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+
         Subscribe.objects.filter(
             follower=request.user,
             following=following
         ).delete()
-    
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False,
@@ -131,7 +131,6 @@ class UserProfileViewSet(UserViewSet):
             context={'request': request}
         )
         return self.get_paginated_response(serializer.data)
-
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -168,21 +167,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
         exists = Recipe.objects.filter(id=pk).exists()
         if not exists:
             raise Http404('Рецепт не найден')
-        
-        long_url = request.build_absolute_uri(reverse('recipe-detail', args=[pk]))
+
+        long_url = request.build_absolute_uri(
+            reverse('recipe-detail', args=[pk])
+        )
         short_url = shorten_url(long_url, is_permanent=False)
         return Response({'short-link': short_url})
 
     def add_to_favorite_or_shopping_cart(self, request, model, pk=None):
         user = request.user
         recipe = get_object_or_404(Recipe, id=pk)
-    
+
         if model.objects.filter(recipe=recipe, user=user).exists():
             return Response(
                 {'errors': 'Рецепт уже добавлен в коллекцию'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+
         obj = model.objects.create(recipe=recipe, user=user)
         serializer = RecipeShortSerializer(obj)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -18,17 +18,18 @@ class RecipeFilter(django_filters.FilterSet):
     def filter_is_favorited(self, recipes_queryset, name, value):
         if self.request.user.is_anonymous:
             return recipes_queryset
-    
+
         if value == 0:
             return recipes_queryset.exclude(favorites__user=self.request.user)
-    
+
         return recipes_queryset.filter(favorites__user=self.request.user)
+
 
 def filter_is_in_shopping_cart(self, recipes_queryset, name, value):
     if self.request.user.is_anonymous:
         return recipes_queryset
-    
+
     if value == 0:
         return recipes_queryset.exclude(shopping_cart__user=self.request.user)
-    
+
     return recipes_queryset.filter(shopping_cart__user=self.request.user)

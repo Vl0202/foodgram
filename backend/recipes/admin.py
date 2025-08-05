@@ -13,13 +13,14 @@ class SubscribeAdmin(admin.ModelAdmin):
         'follower__username',
         'following__username'
     )
-    
+
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
 
+
 class UserProfileAdmin(UserAdmin):
-    
+
     fieldsets = UserAdmin.fieldsets + (
         ('Дополнительно', {
             'fields': (
@@ -41,26 +42,26 @@ class UserProfileAdmin(UserAdmin):
         'avatar_tag'
     )
     list_filter = UserAdmin.list_filter + ('recipe_count',)
-    
+
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
-    
+
     @mark_safe
     def avatar_tag(self):
         if self.avatar:
             return f'<img src="{self.avatar.url}" width="50" height="50">'
         return 'Нет аватара'
     avatar_tag.short_description = 'Аватар'
-    
+
     @property
     def recipe_count(self):
         return self.recipes.count()
-    
+
     @property
     def subscription_count(self):
         return self.subscriptions.count()
-    
+
     @property
     def follower_count(self):
         return self.followers.count()
@@ -73,8 +74,12 @@ class IngredientAdmin(admin.ModelAdmin):
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'author', 'cooking_time', 'ingredients', 'tags', 'image', 'count_favorites')
-    list_filter = ('tags', 'author' )
+    list_display = (
+        'id', 'name', 'author',
+        'cooking_time', 'ingredients',
+        'tags', 'image', 'count_favorites'
+    )
+    list_filter = ('tags', 'author')
     search_fields = ('name__icontains', 'author__username__icontains')
 
     def count_favorites(self, recipe):
@@ -94,11 +99,12 @@ class ShoppingCartAdmin(admin.ModelAdmin):
 
 
 class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'recipe') 
+    list_display = ('id', 'user', 'recipe')
     search_fields = ('user__username', 'recipe__name')
 
+
 admin.site.register(UserProfile, UserProfileAdmin)
-admin.site.register(Subscribe,SubscribeAdmin)
+admin.site.register(Subscribe, SubscribeAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)

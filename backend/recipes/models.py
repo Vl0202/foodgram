@@ -18,7 +18,11 @@ class UserProfile(AbstractUser):
         unique=True,
         validators=[RegexValidator(
             regex=r'^[\w.@+-]+$',
-            message=('Введите корректный никнейм. Это значение может содержать только буквы, цифры и символы @/./+/-/_')
+            message=(
+                'Введите корректный никнейм. '
+                'Это значение может содержать только '
+                'буквы, цифры и символы @/./+/-/_'
+            )
         )]
     )
     avatar = models.ImageField(
@@ -60,7 +64,6 @@ class Subscribe(models.Model):
                 name='no_self_subscription'
             )
         ]
-
 
 
 class Tag(models.Model):
@@ -125,15 +128,17 @@ class Recipe(models.Model):
         verbose_name="Продукты",
     )
     cooking_time = models.PositiveIntegerField(
-        verbose_name="Время приготовления",
+        verbose_name='Время приготовления',
         validators=[
             validators.MinValueValidator(
                 MIN_TIME,
-                message=f"Время приготовления не может быть меньше {MIN_TIME} минуты"
+                message='Время приготовления не может '
+                f'быть меньше {MIN_TIME} минуты'
             ),
             validators.MaxValueValidator(
                 MAX_TIME,
-                message=F"Время приготовления не может превышать {MAX_TIME} минут"
+                message='Время приготовления не может '
+                f'превышать {MAX_TIME} минут'
             )
         ]
     )
@@ -168,7 +173,8 @@ class IngredientAmount(models.Model):
     amount = models.PositiveSmallIntegerField(
         validators=(
             validators.MinValueValidator(
-                MIN_AMOUNT, message=f'Минимальное количество продуктов {MIN_AMOUNT}'),
+                MIN_AMOUNT,
+                message=f'Минимальное количество продуктов {MIN_AMOUNT}'),
         ),
         verbose_name='Количество',
     )
@@ -207,13 +213,13 @@ class RecipeUserRelation(models.Model):
 
     def __str__(self):
         return f'{self.user} → {self.recipe} ({self._meta.verbose_name})'
-        
 
 
 class Favorite(RecipeUserRelation):
     class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные'
+
 
 class ShoppingCart(RecipeUserRelation):
     recipe = models.ForeignKey(

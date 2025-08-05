@@ -29,18 +29,17 @@ class UserProfileSerializer(UserSerializer):
 
     def get_is_subscribed(self, user_profile):
         request = self.context.get('request')
-        return bool(request and request.user and not request.user.is_anonymous 
-                  and Subscribe.objects.filter(
-                      follower=request.user, 
-                      following=user_profile
-                  ).exists())
+        return bool(request and request.user and not request.user.is_anonymous
+                    and Subscribe.objects.filter(
+                        follower=request.user,
+                        following=user_profile
+                    ).exists())
 
 
 class AvatarSerializer(UserProfileSerializer):
     class Meta:
         model = User
         fields = ('avatar', )
-
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -163,7 +162,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         for field_item in data:
             id = field_item if field == 'tags' else field_item['id']
-        
+
             if id in item_set:
                 duplicates.add(str(id))
             item_set.add(id)
@@ -202,29 +201,31 @@ class RecipeSerializer(serializers.ModelSerializer):
         if ingredients_data is not None:
             instance.ingredient_amounts.all().delete()
             self.create_ingredients(ingredients_data, instance)
-    
+
         return instance
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
     email = serializers.CharField(source='following.email', read_only=True)
-    username = serializers.CharField(source='following.username', read_only=True)
-    first_name = serializers.CharField(source='following.first_name', read_only=True)
-    last_name = serializers.CharField(source='following.last_name', read_only=True)
+    username = serializers.CharField(
+        source='following.username', read_only=True)
+    first_name = serializers.CharField(
+        source='following.first_name', read_only=True)
+    last_name = serializers.CharField(
+        source='following.last_name', read_only=True)
     avatar = serializers.SerializerMethodField()
-    is_subscribed = serializers.BooleanField(read_only=True, default=True)
+    is_subscribed = serializers.BooleanField(
+        read_only=True, default=True)
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.IntegerField(
         source='following.recipes.count',
         read_only=True
     )
-    
 
     class Meta:
         model = Subscribe
         fields = ('id', 'email', 'username', 'first_name', 'last_name',
                   'is_subscribed', 'recipes', 'recipes_count', 'avatar')
-
 
     def get_recipes(self, obj):
         queryset = obj.following.recipes.all()
@@ -245,7 +246,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
         read_only_fields = fields
 
-    image = serializers.ImageField(read_only=True, use_url=True )
+    image = serializers.ImageField(read_only=True, use_url=True)
 
 
 class CropRecipeSerializer(serializers.ModelSerializer):
