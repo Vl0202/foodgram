@@ -70,5 +70,6 @@ python manage.py runserver
 
 ### Авторы
 GitHub: @Vl0202
+
 Ли Владимир
 
