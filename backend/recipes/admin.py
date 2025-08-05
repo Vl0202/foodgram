@@ -13,14 +13,21 @@ class SubscribeAdmin(admin.ModelAdmin):
         'follower__username',
         'following__username'
     )
+
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
 
+
 class UserProfileAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ('Дополнительно', {
-            'fields': ('avatar', 'recipe_count', 'subscription_count', 'follower_count')
+            'fields': (
+                'avatar',
+                'recipe_count',
+                'subscription_count',
+                'follower_count'
+            )
         }),
     )
     list_display = (
@@ -33,7 +40,7 @@ class UserProfileAdmin(UserAdmin):
         'follower_count'
     )
     list_filter = UserAdmin.list_filter
-    
+
     @admin.display(
         description='Полное имя',
         ordering='first_name'
@@ -72,10 +79,12 @@ class UserProfileAdmin(UserAdmin):
     def follower_count(self, obj):
         return obj.followers.count()
 
+
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'measurement_unit')
     search_fields = ('name__icontains', 'measurement_unit')
     list_filter = ('measurement_unit',)
+
 
 class RecipeAdmin(admin.ModelAdmin):
     list_display = (
@@ -85,14 +94,15 @@ class RecipeAdmin(admin.ModelAdmin):
     )
     list_filter = ('tags', 'author')
     search_fields = ('name__icontains', 'author__username__icontains')
-    
+
     @admin.display(
         description='Ингредиенты',
         ordering='ingredients__name'
     )
     def get_ingredients(self, obj):
-        return ', '.join([ing.ingredient.name for ing in obj.ingredients.all()[:5]])
-    
+        return ', '.join(
+            [ing.ingredient.name for ing in obj.ingredients.all()[:5]])
+
     @admin.display(
         description='Теги',
         ordering='tags__name'
@@ -107,10 +117,11 @@ class RecipeAdmin(admin.ModelAdmin):
     def count_favorites(self, recipe):
         return recipe.favorites.count()
 
+
 class TagAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug', 'recipes_count')
     list_filter = ('name', 'slug')
-    
+
     @admin.display(
         description='Количество рецептов',
         ordering='recipes__count'
@@ -118,15 +129,18 @@ class TagAdmin(admin.ModelAdmin):
     def recipes_count(self, tag):
         return tag.recipes.count()
 
+
 class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'recipe')
     search_fields = ('user__username', 'recipe__name')
     list_filter = ('user', 'recipe')
 
+
 class FavoriteAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'recipe')
     search_fields = ('user__username', 'recipe__name')
     list_filter = ('user', 'recipe')
+
 
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(Subscribe, SubscribeAdmin)
