@@ -1,18 +1,10 @@
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
+from recipes.models import (Favorite, Ingredient, IngredientAmount, Recipe,
+                            ShoppingCart, Subscribe, Tag)
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-
-from ..recipes.models import (
-    Favorite,
-    Ingredient,
-    IngredientAmount,
-    Subscribe,
-    Recipe,
-    ShoppingCart,
-    Tag
-)
 
 User = get_user_model()
 
@@ -58,9 +50,6 @@ class IngredientAmountSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
         source='ingredient',
-        error_messages={
-            'Продукт с таким id не существует.',
-        }
     )
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(

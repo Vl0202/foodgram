@@ -6,8 +6,6 @@ from django.db import models
 
 from .constants import MAX_TIME, MIN_AMOUNT, MIN_TIME
 
-User = get_user_model()
-
 
 class UserProfile(AbstractUser):
     first_name = models.CharField(('first name'), max_length=150, blank=True)
@@ -33,6 +31,9 @@ class UserProfile(AbstractUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name', 'username']
+
+
+User = get_user_model()
 
 
 class Subscribe(models.Model):
@@ -149,7 +150,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        ordering = ['name', '-created_at']
+        ordering = ['name', '-name']
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
 

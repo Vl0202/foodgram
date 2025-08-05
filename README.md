@@ -17,9 +17,6 @@
 
 ```
 git clone https://github.com/Vl0202/foodgram
-```
-
-```
 cd foodgram
 ```
 
@@ -37,6 +34,41 @@ docker-compose up -d
 
 По адресу http://localhost/api/docs/ можно изучить спецификацию API.
 
+### Как запустить проект (локально):
+
+```
+git clone https://github.com/Vl0202/foodgram
+cd backend
+```
+Создание и активациия виртуального окружения
+```
+python -m venv venv
+source venv/bin/activate  # для Linux/Mac
+```
+Установка зависимостей
+```
+pip install -r requirements.txt
+```
+
+Создание базы данных
+```
+python manage.py migrate
+```
+```
+python manage.py loaddata ingredients.json
+python manage.py loaddata tags.json
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+### Доступы:
+
+Документация API: http://localhost/api/docs/
+Админка: http://localhost/admin/
+Основной сайт: http://localhost/
+Производственный сервер: https://foodgram771.ddns.net/
+
 ### Авторы
-Vl0202 
+GitHub: @Vl0202
+Ли Владимир
 

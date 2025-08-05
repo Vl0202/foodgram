@@ -1,37 +1,27 @@
 import base64
 import os
 
+from api.filters import RecipeFilter
+from api.paginations import PageLimitPagination
+from api.permissions import IsAuthorOrReadOnlyPermission
+from api.serializers import (AvatarSerializer, IngredientSerializer,
+                             RecipeSerializer, RecipeShortSerializer,
+                             SubscribeSerializer, TagSerializer)
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
+from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
+                            Subscribe, Tag)
+from recipes.services import generate_shopping_list
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from urlshortner.utils import shorten_url
-
-from recipes.models import (
-    Favorite, Ingredient,
-    Recipe, ShoppingCart,
-    Subscribe, Tag
-)
-from recipes.services import generate_shopping_list
-from ..api.filters import RecipeFilter
-from ..api.paginations import PageLimitPagination
-from ..api.permissions import IsAuthorOrReadOnlyPermission
-from ..api.serializers import (
-    AvatarSerializer,
-    IngredientSerializer,
-    RecipeSerializer,
-    RecipeShortSerializer,
-    SubscribeSerializer,
-    TagSerializer
-)
 
 User = get_user_model()
 
