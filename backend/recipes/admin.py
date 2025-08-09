@@ -125,7 +125,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
 
 class TagAdmin(CountRecipesMixin, admin.ModelAdmin):
-    list_display = ('id', 'name', 'slug', 'recipes_count')
+    list_display = ('id', 'name', 'slug', 'recipe_count')
     list_filter = ('name', 'slug')
 
 
