@@ -34,7 +34,7 @@ class UserProfile(AbstractUser):
     REQUIRED_FIELDS = ['first_name', 'last_name', 'username']
 
     class Meta:
-        ordering = ['last_name', 'first_name']
+        ordering = ['username']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
@@ -53,7 +53,7 @@ class Subscribe(models.Model):
     following = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='autors',
+        related_name='authors',
         verbose_name='Автор',
     )
 
@@ -196,12 +196,12 @@ class RecipeUserRelation(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='%(class)s_set',
+        related_name='%(class)s_relations',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='%(class)s_set',
+        related_name='%(class)s_relations',
         verbose_name='Рецепт',
     )
 

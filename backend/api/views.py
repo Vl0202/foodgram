@@ -1,5 +1,6 @@
 import base64
 import os
+from io import StringIO
 
 from api.filters import RecipeFilter
 from api.paginations import PageLimitPagination
@@ -9,7 +10,7 @@ from api.serializers import (AvatarSerializer, IngredientSerializer,
                              SubscribedUserSerializer, TagSerializer)
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from django.http import Http404, HttpResponse
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,6 +20,7 @@ from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
 from recipes.services import generate_shopping_list
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -67,17 +69,13 @@ class UserProfileViewSet(UserViewSet):
     )
     def subscribe(self, request, id=None):
         if request.method == 'DELETE':
-            deleted_count = Subscribe.objects.filter(
+            subscription = get_object_or_404(
+                Subscribe,
                 follower=request.user,
                 following_id=id
-            ).delete()
-            return Response(
-                status=(
-                    status.HTTP_204_NO_CONTENT
-                    if deleted_count
-                    else status.HTTP_404_NOT_FOUND
-                )
             )
+            subscription.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
         if request.method == 'GET':
             return Response({
@@ -88,21 +86,16 @@ class UserProfileViewSet(UserViewSet):
             }, status=status.HTTP_200_OK)
 
         if request.user.id == id:
-            return Response(
-                {'errors': 'Нельзя подписаться на себя'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValidationError('Нельзя подписаться на себя')
 
         created = Subscribe.objects.get_or_create(
             follower=request.user,
             following_id=id,
-            defaults={'follower': request.user, 'following_id': id}
         )
 
         if not created:
-            return Response(
-                {'errors': f'Вы уже подписаны на пользователя с id={id}'},
-                status=status.HTTP_400_BAD_REQUEST
+            raise ValidationError(
+                f'Вы уже подписаны на пользователя с id={id}'
             )
 
         return Response(status=status.HTTP_201_CREATED)
@@ -160,32 +153,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response({'short-link': long_url})
 
     def add_to_favorite_or_shopping_cart(self, request, model, pk=None):
-        collection_name = (
-            'избранное'
-            if model == Favorite
-            else 'корзину покупок'
-        )
-        obj, created = model.objects.get_or_create(
+        collection_name = model._meta.verbose_name.lower()
+        _, created = model.objects.get_or_create(
             recipe_id=pk,
-            user=request.user,
-            defaults={'recipe_id': pk, 'user': request.user}
+            user=request.user
         )
 
         if not created:
-            return Response(
-                {'errors': f'Рецепт {pk} уже добавлен в {collection_name}'},
-                status=status.HTTP_400_BAD_REQUEST
+            raise ValidationError(
+                f'Рецепт уже добавлен в {collection_name}'
             )
 
         return Response(
-            RecipeShortSerializer(obj).data,
+            RecipeShortSerializer(_).data,
             status=status.HTTP_201_CREATED
         )
 
     def remove_recipe(self, request, model, pk=None):
-        user = request.user
         instance = get_object_or_404(
-            model.objects.filter(recipe=pk, user=user),
+            model.objects.filter(recipe=pk, user=request.user),
         )
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -206,14 +192,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=(IsAuthenticated, ),
             url_path='download_shopping_cart')
     def download_shopping_cart(self, request):
-        response = HttpResponse(
-            generate_shopping_list(request.user),
-            content_type='text/plain'
-        )
-        response['Content-Disposition'] = (
-            'attachment; filename="shopping_list.txt"'
-        )
-        return response
+        shopping_list = generate_shopping_list(request.user)
+        file = StringIO(shopping_list)
+        return FileResponse(file, as_attachment=True,
+                            filename='shopping_list.txt')
 
     @action(methods=['POST'], detail=True,
             permission_classes=(IsAuthenticated, ))

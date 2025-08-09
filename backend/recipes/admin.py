@@ -1,9 +1,18 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.utils.html import mark_safe
+from django.utils.html import format_html, mark_safe
 
 from .models import (Favorite, Ingredient, Recipe, ShoppingCart, Subscribe,
                      Tag, UserProfile)
+
+
+class CountRecipesMixin:
+    @admin.display(
+        description='Количество рецептов',
+        ordering='recipes__count'
+    )
+    def recipe_count(self, obj):
+        return obj.recipes.count()
 
 
 class SubscribeAdmin(admin.ModelAdmin):
@@ -40,8 +49,8 @@ class UserProfileAdmin(UserAdmin):
         description='Полное имя',
         ordering='first_name'
     )
-    def get_full_name(self, obj):
-        return obj.full_name
+    def get_full_name(self, user):
+        return user.full_name
 
     @admin.display(
         description='Аватар',
@@ -51,7 +60,6 @@ class UserProfileAdmin(UserAdmin):
     def avatar_tag(self, obj):
         if obj.avatar:
             return f'<img src="{obj.avatar.url}" width="50" height="50">'
-        return 'Нет аватара'
 
     @admin.display(
         description='Количество рецептов',
@@ -75,17 +83,10 @@ class UserProfileAdmin(UserAdmin):
         return obj.followers.count()
 
 
-class IngredientAdmin(admin.ModelAdmin):
+class IngredientAdmin(CountRecipesMixin, admin.ModelAdmin):
     list_display = ('id', 'name', 'measurement_unit', 'recipe_count')
     search_fields = ('name__icontains', 'measurement_unit')
     list_filter = ('measurement_unit',)
-
-    @admin.display(
-        description='Количество рецептов',
-        ordering='recipes__count'
-    )
-    def recipe_count(self, obj):
-        return obj.recipes.count()
 
 
 class RecipeAdmin(admin.ModelAdmin):
@@ -102,11 +103,11 @@ class RecipeAdmin(admin.ModelAdmin):
         ordering='ingredients__name'
     )
     def get_ingredients(self, obj):
-        return '\n'.join(
+        return format_html('<br>'.join(
             f"- {ing.ingredient.name} "
             f"({ing.amount} {ing.ingredient.measurement_unit})"
-            for ing in obj.ingredients.all()
-        )
+            for ing in obj.ingredients.select_related('ingredient').all()
+        ))
 
     @admin.display(
         description='Теги',
@@ -123,16 +124,9 @@ class RecipeAdmin(admin.ModelAdmin):
         return recipe.favorites.count()
 
 
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(CountRecipesMixin, admin.ModelAdmin):
     list_display = ('id', 'name', 'slug', 'recipes_count')
     list_filter = ('name', 'slug')
-
-    @admin.display(
-        description='Рецепты',
-        ordering='recipes__count'
-    )
-    def recipes_count(self, tag):
-        return tag.recipes.count()
 
 
 class ShoppingCartAdmin(admin.ModelAdmin):
