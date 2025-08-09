@@ -201,7 +201,7 @@ class RecipeUserRelation(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        rrelated_name='%(class)s_set',
+        related_name='%(class)s_set',
         verbose_name='Рецепт',
     )
 
