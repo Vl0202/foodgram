@@ -21,7 +21,6 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from urlshortner.utils import shorten_url
 
 User = get_user_model()
 
@@ -63,53 +62,50 @@ class UserProfileViewSet(UserViewSet):
             return Response({"errors": "У вас нет аватара"}, status=400)
 
     @action(
-        methods=['POST', 'GET'],
+        methods=['POST', 'GET', 'DELETE'],
         detail=True,
     )
     def subscribe(self, request, id=None):
-        following = get_object_or_404(User, id=id)
-
-        if request.method == 'POST':
-            if Subscribe.objects.filter(
+        if request.method == 'DELETE':
+            deleted_count = Subscribe.objects.filter(
                 follower=request.user,
-                following=following,
-            ).exists():
-                msg = f'Вы уже подписаны на {following.username}'
-                return Response(
-                    {'errors': msg}, status=status.HTTP_400_BAD_REQUEST
+                following_id=id
+            ).delete()
+            return Response(
+                status=(
+                    status.HTTP_204_NO_CONTENT
+                    if deleted_count
+                    else status.HTTP_404_NOT_FOUND
                 )
-
-            Subscribe.objects.create(
-                follower=request.user,
-                following=following,
             )
-            return Response(status=status.HTTP_201_CREATED)
 
-        elif request.method == 'GET':
-            return Response(
-                data={'is_subscribed': Subscribe.objects.filter(
+        if request.method == 'GET':
+            return Response({
+                'is_subscribed': Subscribe.objects.filter(
                     follower=request.user,
-                    following=following,
-                ).exists()},
-                status=status.HTTP_200_OK
-            )
+                    following_id=id
+                ).exists()
+            }, status=status.HTTP_200_OK)
 
-    @subscribe.mapping.delete
-    def del_subscribe(self, request, id=None):
-        following = get_object_or_404(User, id=id)
-
-        if request.user == following:
+        if request.user.id == id:
             return Response(
-                data={'errors': 'Нельзя отписаться от себя'},
+                {'errors': 'Нельзя подписаться на себя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        Subscribe.objects.filter(
+        created = Subscribe.objects.get_or_create(
             follower=request.user,
-            following=following
-        ).delete()
+            following_id=id,
+            defaults={'follower': request.user, 'following_id': id}
+        )
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if not created:
+            return Response(
+                {'errors': f'Вы уже подписаны на пользователя с id={id}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(status=status.HTTP_201_CREATED)
 
     @action(detail=False,
             permission_classes=[IsAuthenticated])
@@ -156,33 +152,40 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_link(self, request, pk=None):
         exists = Recipe.objects.filter(id=pk).exists()
         if not exists:
-            raise Http404('Рецепт не найден')
+            raise Http404(f'Рецепт с id={pk} не найден')
 
         long_url = request.build_absolute_uri(
-            reverse('recipe-detail', args=[pk])
+            reverse('api:recipes-detail', args=[pk])
         )
-        short_url = shorten_url(long_url, is_permanent=False)
-        return Response({'short-link': short_url})
+        return Response({'short-link': long_url})
 
     def add_to_favorite_or_shopping_cart(self, request, model, pk=None):
-        user = request.user
-        recipe = get_object_or_404(Recipe, id=pk)
+        collection_name = (
+            'избранное'
+            if model == Favorite
+            else 'корзину покупок'
+        )
+        obj, created = model.objects.get_or_create(
+            recipe_id=pk,
+            user=request.user,
+            defaults={'recipe_id': pk, 'user': request.user}
+        )
 
-        if model.objects.filter(recipe=recipe, user=user).exists():
+        if not created:
             return Response(
-                {'errors': 'Рецепт уже добавлен в коллекцию'},
+                {'errors': f'Рецепт {pk} уже добавлен в {collection_name}'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        obj = model.objects.create(recipe=recipe, user=user)
-        serializer = RecipeShortSerializer(obj)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(
+            RecipeShortSerializer(obj).data,
+            status=status.HTTP_201_CREATED
+        )
 
     def remove_recipe(self, request, model, pk=None):
         user = request.user
         instance = get_object_or_404(
             model.objects.filter(recipe=pk, user=user),
-            'Рецепт не был добавлен в коллекцию'
         )
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

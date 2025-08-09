@@ -22,9 +22,9 @@ def generate_shopping_list(user):
     return render_to_string('shopping_list.txt', {
         'date': date.today(),
         'ingredients': [{
-            'name': i['ingredient__name'],
-            'unit': i['ingredient__measurement_unit'],
-            'total': i['total']
-        } for i in ingredients],
+            'name': ingredient['ingredient__name'],
+            'unit': ingredient['ingredient__measurement_unit'],
+            'total': ingredient['total']
+        } for ingredient in ingredients],
         'recipes': recipes
     })

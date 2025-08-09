@@ -14,10 +14,6 @@ class SubscribeAdmin(admin.ModelAdmin):
         'following__username'
     )
 
-    class Meta:
-        verbose_name = 'Подписка'
-        verbose_name_plural = 'Подписки'
-
 
 class UserProfileAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
@@ -39,7 +35,6 @@ class UserProfileAdmin(UserAdmin):
         'subscription_count',
         'follower_count'
     )
-    list_filter = UserAdmin.list_filter
 
     @admin.display(
         description='Полное имя',
@@ -81,9 +76,16 @@ class UserProfileAdmin(UserAdmin):
 
 
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'measurement_unit')
+    list_display = ('id', 'name', 'measurement_unit', 'recipe_count')
     search_fields = ('name__icontains', 'measurement_unit')
     list_filter = ('measurement_unit',)
+
+    @admin.display(
+        description='Количество рецептов',
+        ordering='recipes__count'
+    )
+    def recipe_count(self, obj):
+        return obj.recipes.count()
 
 
 class RecipeAdmin(admin.ModelAdmin):
@@ -100,18 +102,21 @@ class RecipeAdmin(admin.ModelAdmin):
         ordering='ingredients__name'
     )
     def get_ingredients(self, obj):
-        return ', '.join(
-            [ing.ingredient.name for ing in obj.ingredients.all()[:5]])
+        return '\n'.join(
+            f"- {ing.ingredient.name} "
+            f"({ing.amount} {ing.ingredient.measurement_unit})"
+            for ing in obj.ingredients.all()
+        )
 
     @admin.display(
         description='Теги',
         ordering='tags__name'
     )
     def get_tags(self, obj):
-        return ', '.join([tag.name for tag in obj.tags.all()[:5]])
+        return ', '.join(tag.name for tag in obj.tags.all())
 
     @admin.display(
-        description='Количество лайков',
+        description='Лайки',
         ordering='favorites__count'
     )
     def count_favorites(self, recipe):
@@ -123,7 +128,7 @@ class TagAdmin(admin.ModelAdmin):
     list_filter = ('name', 'slug')
 
     @admin.display(
-        description='Количество рецептов',
+        description='Рецепты',
         ordering='recipes__count'
     )
     def recipes_count(self, tag):

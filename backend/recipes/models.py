@@ -4,14 +4,15 @@ from django.core import validators
 from django.core.validators import RegexValidator
 from django.db import models
 
-from .constants import MAX_TIME, MIN_AMOUNT, MIN_TIME
+from .constants import MIN_AMOUNT, MIN_TIME
 
 
 class UserProfile(AbstractUser):
-    first_name = models.CharField(('first name'), max_length=150, blank=True)
-    last_name = models.CharField(('last name'), max_length=150, blank=True)
+    first_name = models.CharField('Имя', max_length=150, blank=True)
+    last_name = models.CharField('Фамилия', max_length=150, blank=True)
     email = models.EmailField('Электронная почта', unique=True, max_length=254)
     username = models.CharField(
+        'Логин',
         max_length=150,
         unique=True,
         validators=[RegexValidator(
@@ -32,6 +33,11 @@ class UserProfile(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name', 'username']
 
+    class Meta:
+        ordering = ['last_name', 'first_name']
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+
 
 User = get_user_model()
 
@@ -48,7 +54,7 @@ class Subscribe(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='autors',
-        verbose_name='Пользователь',
+        verbose_name='Автор',
     )
 
     class Meta:
@@ -114,7 +120,7 @@ class Recipe(models.Model):
 
     image = models.ImageField(
         upload_to='recipes/images/',
-        verbose_name="Картинка",
+        verbose_name='Картинка',
     )
     author = models.ForeignKey(
         User,
@@ -135,11 +141,6 @@ class Recipe(models.Model):
                 MIN_TIME,
                 message='Время приготовления не может '
                 f'быть меньше {MIN_TIME} минуты'
-            ),
-            validators.MaxValueValidator(
-                MAX_TIME,
-                message='Время приготовления не может '
-                f'превышать {MAX_TIME} минут'
             )
         ]
     )
@@ -150,7 +151,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        ordering = ['name', '-name']
+        ordering = ['name']
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
 
@@ -168,7 +169,7 @@ class IngredientAmount(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='ingredient_amounts',
+        related_name='recipe_amounts',
         verbose_name='Рецепт',
     )
     amount = models.PositiveSmallIntegerField(
@@ -195,11 +196,12 @@ class RecipeUserRelation(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
+        related_name='%(class)s_set',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='favorites',
+        rrelated_name='%(class)s_set',
         verbose_name='Рецепт',
     )
 
@@ -217,19 +219,12 @@ class RecipeUserRelation(models.Model):
 
 
 class Favorite(RecipeUserRelation):
-    class Meta:
+    class Meta (RecipeUserRelation.Meta):
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные'
 
 
 class ShoppingCart(RecipeUserRelation):
-    recipe = models.ForeignKey(
-        Recipe,
-        related_name='shopping_cart',
-        on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-    )
-
-    class Meta:
+    class Meta (RecipeUserRelation.Meta):
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
