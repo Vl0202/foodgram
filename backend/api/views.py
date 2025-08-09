@@ -6,7 +6,7 @@ from api.paginations import PageLimitPagination
 from api.permissions import IsAuthorOrReadOnlyPermission
 from api.serializers import (AvatarSerializer, IngredientSerializer,
                              RecipeSerializer, RecipeShortSerializer,
-                             SubscribeSerializer, TagSerializer)
+                             SubscribedUserSerializer, TagSerializer)
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.http import Http404, HttpResponse
@@ -111,7 +111,7 @@ class UserProfileViewSet(UserViewSet):
             permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
         pages = self.paginate_queryset(request.user.followers.all())
-        serializer = SubscribeSerializer(
+        serializer = SubscribedUserSerializer(
             pages,
             many=True,
             context={'request': request}
