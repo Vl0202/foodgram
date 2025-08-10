@@ -22,7 +22,8 @@ class BaseImportCommand(BaseCommand):
                 )
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'Успешно загружено {len(created)} записей из {filename}')
+                        f'Успешно загружено {len(created)} '
+                        f'записей из {filename}')
                 )
         except Exception as e:
             self.stderr.write(f'Ошибка при обработке файла {filename}: {e}')

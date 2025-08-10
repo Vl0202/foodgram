@@ -26,7 +26,7 @@ class SubscribeAdmin(admin.ModelAdmin):
     )
 
 
-class UserProfileAdmin(CountRecipesMixin,UserAdmin):
+class UserProfileAdmin(CountRecipesMixin, UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ('Дополнительно', {
             'fields': (
@@ -79,7 +79,9 @@ class UserProfileAdmin(CountRecipesMixin,UserAdmin):
 
 
 class IngredientAdmin(CountRecipesMixin, admin.ModelAdmin):
-    list_display = ('id', 'name', 'measurement_unit', *CountRecipesMixin.list_display)
+    list_display = (
+        'id', 'name', 'measurement_unit', *CountRecipesMixin.list_display
+    )
     search_fields = ('name__icontains', 'measurement_unit')
     list_filter = ('measurement_unit',)
 
