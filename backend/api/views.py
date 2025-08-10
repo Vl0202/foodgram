@@ -1,6 +1,5 @@
 import base64
 import os
-from io import StringIO
 
 from api.filters import RecipeFilter
 from api.paginations import PageLimitPagination
@@ -88,7 +87,7 @@ class UserProfileViewSet(UserViewSet):
         if request.user.id == id:
             raise ValidationError('Нельзя подписаться на себя')
 
-        created = Subscribe.objects.get_or_create(
+        _, created = Subscribe.objects.get_or_create(
             follower=request.user,
             following_id=id,
         )
@@ -161,7 +160,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if not created:
             raise ValidationError(
-                f'Рецепт уже добавлен в {collection_name}'
+                f'Рецепт c id:{_.recipe.id} уже добавлен в {collection_name}'
             )
 
         return Response(
@@ -171,8 +170,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def remove_recipe(self, request, model, pk=None):
         instance = get_object_or_404(
-            model.objects.filter(recipe=pk, user=request.user),
-        )
+            model, recipe=pk, user=request.user),
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -193,8 +191,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             url_path='download_shopping_cart')
     def download_shopping_cart(self, request):
         shopping_list = generate_shopping_list(request.user)
-        file = StringIO(shopping_list)
-        return FileResponse(file, as_attachment=True,
+        return FileResponse(shopping_list, as_attachment=True,
                             filename='shopping_list.txt')
 
     @action(methods=['POST'], detail=True,
