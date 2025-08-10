@@ -196,12 +196,12 @@ class RecipeUserRelation(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='favorite_recipes',
+        related_name='%(class)s',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='in_favorites',
+        related_name='%(class)s',
         verbose_name='Рецепт',
     )
 
