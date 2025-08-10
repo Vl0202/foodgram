@@ -37,6 +37,7 @@ class UserProfile(AbstractUser):
         ordering = ['username']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        db_table = 'recipes_userprofile'
 
 
 User = get_user_model()
