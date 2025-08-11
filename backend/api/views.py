@@ -147,7 +147,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             raise Http404(f'Рецепт с id={pk} не найден')
 
         long_url = request.build_absolute_uri(
-            reverse('api:recipes-detail', args=[pk])
+            reverse('api:recipes', args=[pk])
         )
         return Response({'short-link': long_url})
 

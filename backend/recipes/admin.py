@@ -52,7 +52,7 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
         ordering='first_name'
     )
     def get_full_name(self, user):
-        return user.full_name
+        return f"{user.first_name} {user.last_name}".strip() or user.username
 
     @admin.display(
         description='Аватар',
@@ -68,7 +68,7 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
         ordering='subscriptions__count'
     )
     def subscription_count(self, obj):
-        return obj.subscriptions.count()
+        return obj.authors.count()
 
     @admin.display(
         description='Количество подписчиков',
@@ -83,7 +83,6 @@ class IngredientAdmin(CountRecipesMixin, admin.ModelAdmin):
         'id', 'name', 'measurement_unit', *CountRecipesMixin.list_display
     )
     search_fields = ('name__icontains', 'measurement_unit')
-    list_filter = ('measurement_unit',)
 
 
 class RecipeAdmin(admin.ModelAdmin):
@@ -103,7 +102,7 @@ class RecipeAdmin(admin.ModelAdmin):
         ingredients_list = [
             f"- {ing.ingredient.name} "
             f"({ing.amount} {ing.ingredient.measurement_unit})"
-            for ing in recipe.ingredients.select_related('ingredient').all()
+            for ing in recipe.recipe_amounts.select_related('ingredient').all()
         ]
         return mark_safe('<br>'.join(ingredients_list))
 
