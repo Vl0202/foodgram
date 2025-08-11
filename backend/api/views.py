@@ -96,8 +96,12 @@ class UserProfileViewSet(UserViewSet):
             raise ValidationError(
                 f'Вы уже подписаны на пользователя с id={id}'
             )
-
-        return Response(status=status.HTTP_201_CREATED)
+        following = get_object_or_404(User, id=id)
+        serializer = SubscribedUserSerializer(
+            following,
+            context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=False,
             permission_classes=[IsAuthenticated])
@@ -147,7 +151,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             raise Http404(f'Рецепт с id={pk} не найден')
 
         long_url = request.build_absolute_uri(
-            reverse('api:recipes', args=[pk])
+            reverse('api:recipes-detail', kwargs={'pk': pk})
         )
         return Response({'short-link': long_url})
 
@@ -160,7 +164,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if not created:
             raise ValidationError(
-                f'Рецепт c id:{_.recipe.id} уже добавлен в {collection_name}'
+                f'Рецепт c id:{_.recipe_id} уже добавлен в {collection_name}'
             )
 
         return Response(
@@ -170,7 +174,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def remove_recipe(self, request, model, pk=None):
         instance = get_object_or_404(
-            model, recipe=pk, user=request.user),
+            model, recipe_id=pk, user=request.user)
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -180,7 +184,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated, )
     )
     def shopping_cart(self, request, pk=None):
-        return self.add_recipe(request, ShoppingCart, pk)
+        return self.add_to_favorite_or_shopping_cart(request, ShoppingCart, pk)
 
     @shopping_cart.mapping.delete
     def delete_shopping_cart(self, request, pk=None):
