@@ -34,7 +34,7 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
                 'avatar',
                 'recipe_count',
                 'subscription_count',
-                'follower_count'
+                'subscribers_count'
             )
         }),
     )
@@ -43,8 +43,8 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
         'email',
         'get_full_name',
         'avatar_tag',
-        'subscription_count',
-        'follower_count',
+        'get_subscriptions_count',
+        'get_subscribers_count',
         *CountRecipesMixin.list_display
     )
 
@@ -74,8 +74,8 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(
-            _subscriptions_count=Count('authors'),
-            _subscribers_count=Count('followers')
+            subscriptions_count=Count('authors'),
+            subscribers_count=Count('followers')
         )
 
 
@@ -88,12 +88,15 @@ class IngredientAdmin(CountRecipesMixin, admin.ModelAdmin):
 
 class RecipeAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'name', 'author_username',
+        'id', 'name', 'get_author_username',
         'cooking_time', 'get_ingredients',
         'get_tags', 'image', 'count_favorites'
     )
-    list_filter = ('tags', 'author_username',)
+    list_filter = ('tags', 'author__username',)
     search_fields = ('name__icontains', 'author__username__icontains')
+
+    def get_author_username(self, obj):
+        return obj.author.username
 
     @admin.display(
         description='Ингредиенты',
