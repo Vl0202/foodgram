@@ -67,7 +67,7 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
     def subscriptions_count(self, obj):
         return obj.authors.count()
     subscriptions_count.short_description = 'Подписки'
-    
+
     def subscribers_count(self, obj):
         return obj.followers.count()
     subscribers_count.short_description = 'Подписчики'
