@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.db.models import Count
 from django.utils.html import mark_safe
-from urlshortner.models import URLShortner
 
 from .models import (Favorite, Ingredient, Recipe, ShoppingCart, Subscribe,
                      Tag, UserProfile)
@@ -149,7 +148,6 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_filter = ('user', 'recipe')
 
 
-admin.site.unregister(URLShortner)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(Subscribe, SubscribeAdmin)
 admin.site.register(Tag, TagAdmin)
