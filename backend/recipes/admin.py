@@ -43,8 +43,8 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
         'email',
         'get_full_name',
         'avatar_tag',
-        'get_subscriptions_count',
-        'get_subscribers_count',
+        'subscriptions_count',
+        'subscribers_count',
         *CountRecipesMixin.list_display
     )
 
@@ -64,13 +64,13 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
         if user.avatar:
             return f'<img src="{user.avatar.url}" width="50" height="50">'
 
-    @admin.display(description='Подписчики')
-    def subscribers_count(self, obj):
-        return obj.followers.count()
-
-    @admin.display(description='Подписки')
     def subscriptions_count(self, obj):
         return obj.authors.count()
+    subscriptions_count.short_description = 'Подписки'
+    
+    def subscribers_count(self, obj):
+        return obj.followers.count()
+    subscribers_count.short_description = 'Подписчики'
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(
