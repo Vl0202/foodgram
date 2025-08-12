@@ -38,6 +38,14 @@ class UserProfile(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
+    @property
+    def subscriptions(self):
+        return UserProfile.objects.filter(followers__follower=self)
+
+    @property
+    def subscribers(self):
+        return UserProfile.objects.filter(authors__author=self)
+
 
 User = get_user_model()
 
@@ -135,7 +143,7 @@ class Recipe(models.Model):
         verbose_name="Продукты",
     )
     cooking_time = models.PositiveIntegerField(
-        verbose_name='Время приготовления',
+        verbose_name='Время (мин)',
         validators=[
             validators.MinValueValidator(
                 MIN_TIME,

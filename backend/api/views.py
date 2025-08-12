@@ -14,8 +14,8 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
-                            Subscribe, Tag)
+from recipes.models import (Favorite, Ingredient, IngredientAmount, Recipe,
+                            ShoppingCart, Subscribe, Tag)
 from recipes.services import generate_shopping_list
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -142,6 +142,29 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        ingredients_data = self.request.data.get('ingredients')
+        tags_data = self.request.data.get('tags')
+        serializer.save()
+        if ingredients_data is not None:
+            instance.ingredients.clear()
+            self._update_ingredients(instance, ingredients_data)
+        if tags_data is not None:
+            instance.tags.set(tags_data)
+
+    def _update_ingredients(self, recipe, ingredients_data):
+        recipe.recipe_amounts.all().delete()
+        ingredient_amounts = [
+            IngredientAmount(
+                recipe=recipe,
+                ingredient_id=ingredient['id'],
+                amount=ingredient['amount']
+            )
+            for ingredient in ingredients_data
+        ]
+        IngredientAmount.objects.bulk_create(ingredient_amounts)
+
     @action(detail=True,
             permission_classes=(permissions.IsAuthenticatedOrReadOnly, ),
             url_path='get-link')
@@ -168,7 +191,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
 
         return Response(
-            RecipeShortSerializer(_).data,
+            RecipeShortSerializer(_.recipe).data,
             status=status.HTTP_201_CREATED
         )
 

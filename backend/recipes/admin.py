@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.db.models import Count
 from django.utils.html import mark_safe
+from urlshortner.models import URLShortner
 
 from .models import (Favorite, Ingredient, Recipe, ShoppingCart, Subscribe,
                      Tag, UserProfile)
@@ -52,7 +54,7 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
         ordering='first_name'
     )
     def get_full_name(self, user):
-        return f"{user.first_name} {user.last_name}".strip() or user.username
+        return f"{user.first_name} {user.last_name}".strip()
 
     @admin.display(
         description='Аватар',
@@ -63,19 +65,19 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
         if user.avatar:
             return f'<img src="{user.avatar.url}" width="50" height="50">'
 
-    @admin.display(
-        description='Количество подписок',
-        ordering='subscriptions__count'
-    )
-    def subscription_count(self, obj):
+    @admin.display(description='Подписчики')
+    def subscribers_count(self, obj):
+        return obj.followers.count()
+
+    @admin.display(description='Подписки')
+    def subscriptions_count(self, obj):
         return obj.authors.count()
 
-    @admin.display(
-        description='Количество подписчиков',
-        ordering='followers__count'
-    )
-    def follower_count(self, obj):
-        return obj.followers.count()
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _subscriptions_count=Count('authors'),
+            _subscribers_count=Count('followers')
+        )
 
 
 class IngredientAdmin(CountRecipesMixin, admin.ModelAdmin):
@@ -87,11 +89,11 @@ class IngredientAdmin(CountRecipesMixin, admin.ModelAdmin):
 
 class RecipeAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'name', 'author',
+        'id', 'name', 'author_username',
         'cooking_time', 'get_ingredients',
         'get_tags', 'image', 'count_favorites'
     )
-    list_filter = ('tags', 'author')
+    list_filter = ('tags', 'author_username',)
     search_fields = ('name__icontains', 'author__username__icontains')
 
     @admin.display(
@@ -105,6 +107,16 @@ class RecipeAdmin(admin.ModelAdmin):
             for ing in recipe.recipe_amounts.select_related('ingredient').all()
         ]
         return mark_safe('<br>'.join(ingredients_list))
+
+    @admin.display(description='Изображение')
+    def image(self, obj):
+        if obj.image:
+            from django.utils.html import format_html
+            return format_html(
+                '<img src="{}" width="100" style="border-radius:8px">',
+                obj.image.url
+            )
+        return "Нет изображения"
 
     @admin.display(
         description='Теги',
@@ -123,7 +135,6 @@ class RecipeAdmin(admin.ModelAdmin):
 
 class TagAdmin(CountRecipesMixin, admin.ModelAdmin):
     list_display = ('id', 'name', 'slug', *CountRecipesMixin.list_display)
-    list_filter = ('name', 'slug')
 
 
 class ShoppingCartAdmin(admin.ModelAdmin):
@@ -138,6 +149,7 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_filter = ('user', 'recipe')
 
 
+admin.site.unregister(URLShortner)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(Subscribe, SubscribeAdmin)
 admin.site.register(Tag, TagAdmin)
