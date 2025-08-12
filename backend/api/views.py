@@ -77,12 +77,22 @@ class UserProfileViewSet(UserViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         if request.method == 'GET':
-            return Response({
-                'is_subscribed': Subscribe.objects.filter(
-                    follower=request.user,
-                    following_id=id
-                ).exists()
-            }, status=status.HTTP_200_OK)
+            subscription = Subscribe.objects.filter(
+                follower=request.user,
+                following_id=id
+            ).first()
+
+            if not subscription:
+                return Response(
+                    {'errors': 'Подписка не найдена'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            serializer = SubscribedUserSerializer(
+                subscription,
+                context={'request': request}
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
         if request.user.id == id:
             raise ValidationError('Нельзя подписаться на себя')

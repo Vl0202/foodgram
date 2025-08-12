@@ -1,3 +1,4 @@
+import base64
 from collections import Counter
 
 from django.contrib.auth import get_user_model
@@ -5,7 +6,7 @@ from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from recipes.constants import MIN_AMOUNT
 from recipes.models import (Favorite, Ingredient, IngredientAmount, Recipe,
-                            ShoppingCart, Subscribe, Tag, UserProfile)
+                            ShoppingCart, Subscribe, Tag)
 from rest_framework import serializers
 
 User = get_user_model()
@@ -163,7 +164,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients_data = validated_data.pop('ingredients', None)
         tags_data = validated_data.pop('tags', None)
         instance.tags.set(tags_data)
-        instance.ingredient_amounts.all().delete()
+        instance.recipe_amounts.all().delete()
         self.create_ingredients(ingredients_data, instance)
 
         return super().update(instance, validated_data)
@@ -177,13 +178,13 @@ class SubscribedUserSerializer(UserProfileSerializer):
     )
 
     class Meta:
-        model = UserProfile
+        model = Subscribe
         fields = ('id', 'email', 'username', 'first_name', 'last_name',
                   'is_subscribed', 'recipes', 'recipes_count', 'avatar')
         read_only_fields = fields
 
     def get_recipes(self, obj):
-        recipes = obj.following.recipes.all()
+        recipes = Recipe.objects.filter(author=obj.following)
         if 'recipes_limit' in self.context.get('request').GET:
             limit = int(self.context['request'].GET['recipes_limit'])
             recipes = recipes[:limit]
@@ -191,7 +192,15 @@ class SubscribedUserSerializer(UserProfileSerializer):
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
         read_only_fields = fields
+
+    def get_image(self, obj):
+        if obj.image:
+            # Читаем файл и кодируем в base64 как в add_recipe
+            return base64.b64encode(obj.image.read()).decode('utf-8')
+        return None
