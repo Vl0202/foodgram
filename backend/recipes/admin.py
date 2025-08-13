@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.db.models import Count
 from django.utils.html import mark_safe
 
 from .models import (Favorite, Ingredient, Recipe, ShoppingCart, Subscribe,
@@ -33,7 +32,7 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
             'fields': (
                 'avatar',
                 'recipe_count',
-                'subscription_count',
+                'subscriptions_count',
                 'subscribers_count'
             )
         }),
@@ -43,39 +42,35 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
         'email',
         'get_full_name',
         'avatar_tag',
-        'subscriptions_count',
-        'subscribers_count',
+        'get_subscriptions_count',
+        'get_subscribers_count',
         *CountRecipesMixin.list_display
     )
+    readonly_fields = ('subscriptions_count', 'subscribers_count')
 
-    @admin.display(
-        description='Полное имя',
-        ordering='first_name'
-    )
+    @admin.display(description='Полное имя')
     def get_full_name(self, user):
         return f"{user.first_name} {user.last_name}".strip()
 
-    @admin.display(
-        description='Аватар',
-        ordering='avatar'
-    )
-    @mark_safe
+    @admin.display(description='Аватар')
     def avatar_tag(self, user):
         if user.avatar:
-            return f'<img src="{user.avatar.url}" width="50" height="50">'
+            return mark_safe(
+                f'<img src="{user.avatar.url}" width="50" height="50">')
+        return "Нет аватара"
+    avatar_tag.short_description = 'Аватар'
 
-    def subscriptions_count(self, obj):
+    @admin.display(description='Подписки')
+    def get_subscriptions_count(self, obj):
         return obj.authors.count()
-    subscriptions_count.short_description = 'Подписки'
 
-    def subscribers_count(self, obj):
+    @admin.display(description='Подписчики')
+    def get_subscribers_count(self, obj):
         return obj.followers.count()
-    subscribers_count.short_description = 'Подписчики'
 
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate(
-            subscriptions_count=Count('authors'),
-            subscribers_count=Count('followers')
+        return super().get_queryset(request).prefetch_related(
+            'authors', 'followers'
         )
 
 
