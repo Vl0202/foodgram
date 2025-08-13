@@ -130,6 +130,7 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
+
     - name: Copy docker-compose.yml via ssh
       uses: appleboy/scp-action@master
       with:
@@ -138,6 +139,16 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         source: "infra/docker-compose.yml"
+        target: "foodgram"
+
+    - name: Copy ingredients.json via ssh
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USER }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        source: "data/ingredients.json"
         target: "foodgram"
 
     - name: Executing remote ssh commands to deploy
