@@ -31,9 +31,6 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
         ('Дополнительно', {
             'fields': (
                 'avatar',
-                'recipe_count',
-                'subscriptions_count',
-                'subscribers_count'
             )
         }),
     )
@@ -46,7 +43,6 @@ class UserProfileAdmin(CountRecipesMixin, UserAdmin):
         'get_subscribers_count',
         *CountRecipesMixin.list_display
     )
-    readonly_fields = ('get_subscriptions_count', 'get_subscribers_count')
 
     @admin.display(description='Полное имя')
     def get_full_name(self, user):

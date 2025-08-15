@@ -1,0 +1,46 @@
+version: '3.9'
+
+volumes:
+  pg_data:
+  static:
+  media:
+
+services:
+  db:
+    image: postgres:13  # Добавлено 'image:'
+    env_file: ../.env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    
+  frontend:
+    container_name: foodgram-front
+    build: ../frontend/  # Исправлен отступ
+    volumes:
+      - ../frontend/:/app/result_build/
+      - static:/app/result_build/build/static
+    depends_on:
+      - backend
+
+  nginx:
+    container_name: foodgram-proxy
+    build: ../nginx/
+    ports:
+      - "8080:80"
+    volumes:
+      - ../frontend/build:/usr/share/nginx/html/
+      - ../docs/:/usr/share/nginx/html/api/docs/
+      - static:/usr/share/nginx/html/static
+      - media:/usr/share/nginx/html/media
+    depends_on:
+      - backend
+      - frontend
+  
+  backend:
+    container_name: foodgram-backend
+    env_file: ../.env
+    build: ../backend/
+    volumes:
+      - media:/app/media
+      - static:/backend_static/static
+    depends_on:
+      - db
