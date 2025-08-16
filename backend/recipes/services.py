@@ -2,15 +2,12 @@ from datetime import date
 
 from django.db.models import Sum
 from django.template.loader import render_to_string
-from recipes.models import IngredientAmount, ShoppingCart
+from recipes.models import IngredientAmount
 
 
 def generate_shopping_list(user):
-    recipes_in_cart = (
-        ShoppingCart.objects
-        .filter(user=user)
-        .values_list('recipe', flat=True)
-    )
+    recipes_in_cart = user.shopping_carts.values_list(
+        'recipe', flat=True)
     ingredients = (
         IngredientAmount.objects
         .filter(recipe__in=recipes_in_cart)
@@ -22,16 +19,11 @@ def generate_shopping_list(user):
         .order_by('ingredient__name')
     )
     recipes = (
-        ShoppingCart.objects
-        .filter(user=user)
-        .select_related('recipe')
-        .values_list('recipe__name', flat=True)
-        .distinct()
-    )
+        user.shoppingcarts.select_related('recipe').distinct())
 
     content = render_to_string('shopping_list.txt', {
         'ingredients': ingredients,
-        'recipes': list(recipes),
+        'recipes': recipes,
         'date': date.today()
     })
     return content

@@ -10,7 +10,7 @@ from .constants import MIN_AMOUNT, MIN_TIME
 class UserProfile(AbstractUser):
     first_name = models.CharField('Имя', max_length=150, blank=True)
     last_name = models.CharField('Фамилия', max_length=150, blank=True)
-    email = models.EmailField('Электронная почта', unique=True, max_length=254)
+    email = models.EmailField('Почта', unique=True, max_length=254)
     username = models.CharField(
         'Логин',
         max_length=150,
@@ -37,14 +37,6 @@ class UserProfile(AbstractUser):
         ordering = ['username']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-
-    @property
-    def subscriptions(self):
-        return UserProfile.objects.filter(followers__follower=self)
-
-    @property
-    def subscribers(self):
-        return UserProfile.objects.filter(authors__author=self)
 
 
 User = get_user_model()

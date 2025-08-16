@@ -47,4 +47,3 @@ services:
       - /home/yc-user/foodgram/data:/app/data
     depends_on:
       - db
-

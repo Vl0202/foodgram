@@ -10,7 +10,7 @@ class CountRecipesMixin:
     list_display = ('recipe_count',)
 
     @admin.display(
-        description='Количество рецептов',
+        description='Рецепты',
         ordering='recipes__count'
     )
     def recipe_count(self, obj):
@@ -75,6 +75,7 @@ class IngredientAdmin(CountRecipesMixin, admin.ModelAdmin):
         'id', 'name', 'measurement_unit', *CountRecipesMixin.list_display
     )
     search_fields = ('name__icontains', 'measurement_unit')
+    list_filter = ('measurement_unit',)
 
 
 class RecipeAdmin(admin.ModelAdmin):
@@ -86,6 +87,8 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('tags', 'author__username',)
     search_fields = ('name__icontains', 'author__username__icontains')
 
+    @admin.display(
+        description='логин')
     def get_author_username(self, obj):
         return obj.author.username
 
@@ -100,16 +103,6 @@ class RecipeAdmin(admin.ModelAdmin):
             for ing in recipe.recipe_amounts.select_related('ingredient').all()
         ]
         return mark_safe('<br>'.join(ingredients_list))
-
-    @admin.display(description='Изображение')
-    def image(self, obj):
-        if obj.image:
-            from django.utils.html import format_html
-            return format_html(
-                '<img src="{}" width="100" style="border-radius:8px">',
-                obj.image.url
-            )
-        return "Нет изображения"
 
     @admin.display(
         description='Теги',
