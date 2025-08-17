@@ -7,4 +7,4 @@
 
 Рецепты:
 {% for recipe in recipes %}
-- {{ recipe.name }} (автор: {{ recipe.author.username }}){% endfor %}
+- {{ recipe.recipe__name }} (автор: {{ recipe.recipe__author__username }}){% endfor %}

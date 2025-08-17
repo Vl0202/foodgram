@@ -17,7 +17,7 @@ from djoser.views import UserViewSet
 from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
                             Subscribe, Tag)
 from recipes.services import generate_shopping_list
-from rest_framework import permissions, status, viewsets
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -68,23 +68,18 @@ class UserProfileViewSet(UserViewSet):
         permission_classes=[IsAuthenticated]
     )
     def subscribe(self, request, id=None):
-        following_user = get_object_or_404(User, id=id)
-
         if request.method == 'DELETE':
-            deleted = Subscribe.objects.filter(
+            subscription = get_object_or_404(
+                Subscribe,
                 follower=request.user,
-                following=following_user
-            ).delete()
-
-            if deleted[0] == 0:
-                return Response(
-                    {'errors': 'Подписка не найдена'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+                following_id=id
+            )
+            subscription.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         if request.user.id == id:
             raise ValidationError('Нельзя подписаться на себя')
+        following_user = get_object_or_404(User, id=id)
 
         _, created = Subscribe.objects.get_or_create(
             follower=request.user,
@@ -93,7 +88,7 @@ class UserProfileViewSet(UserViewSet):
 
         if not created:
             raise ValidationError(
-                f'Вы уже подписаны на пользователя с id={id}')
+                f'Вы уже подписаны на пользователя {following_user.username}')
 
         serializer = SubscribedUserSerializer(
             following_user,
@@ -131,13 +126,8 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     pagination_class = None
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        name = self.request.query_params.get('name')
-        if name:
-            queryset = queryset.filter(name__istartswith=name)
-        return queryset
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['^name']
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -165,19 +155,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response({'short-link': absolute_url})
 
     def add_to_favorite_or_shopping_cart(self, request, model, pk=None):
+        recipe = get_object_or_404(Recipe, id=pk)
         collection_name = model._meta.verbose_name.lower()
+
         _, created = model.objects.get_or_create(
-            recipe_id=pk,
+            recipe=recipe,
             user=request.user
         )
 
         if not created:
             raise ValidationError(
-                f'Рецепт c id:{_.recipe_id} уже добавлен в {collection_name}'
+                f'Рецепт "{recipe.name}" уже добавлен в {collection_name}'
             )
 
         return Response(
-            RecipeShortSerializer(_.recipe).data,
+            RecipeShortSerializer(recipe).data,
             status=status.HTTP_201_CREATED
         )
 

@@ -82,10 +82,18 @@ class RecipeAdmin(admin.ModelAdmin):
     list_display = (
         'id', 'name', 'get_author_username',
         'cooking_time', 'get_ingredients',
-        'get_tags', 'image', 'count_favorites'
+        'get_tags', 'image_tag', 'count_favorites'
     )
     list_filter = ('tags', 'author__username',)
     search_fields = ('name__icontains', 'author__username__icontains')
+
+    @admin.display(description='Изображение')
+    def image_tag(self, recipe):
+        if recipe.image:
+            return mark_safe(
+                f'<img src="{recipe.image.url}" width="50" height="50" />')
+        return "Нет изображения"
+    image_tag.short_description = 'Изображение'
 
     @admin.display(
         description='логин')
@@ -98,8 +106,8 @@ class RecipeAdmin(admin.ModelAdmin):
     )
     def get_ingredients(self, recipe):
         ingredients_list = [
-            f"- {ing.ingredient.name} "
-            f"({ing.amount} {ing.ingredient.measurement_unit})"
+            f'- {ing.ingredient.name} '
+            f'({ing.amount} {ing.ingredient.measurement_unit})'
             for ing in recipe.recipe_amounts.select_related('ingredient').all()
         ]
         return mark_safe('<br>'.join(ingredients_list))

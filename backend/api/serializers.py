@@ -71,17 +71,11 @@ class RecipeSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     author = UserProfileSerializer(read_only=True)
-    ingredients = IngredientAmountSerializer(
-        source='ingredientamount_set',
-        many=True,
-        read_only=True,
-        default=[]
-    )
+    ingredients = serializers.SerializerMethodField()
     image = Base64ImageField()
     tags = TagSerializer(
         read_only=True,
         many=True,
-        default=[]
     )
 
     class Meta:
@@ -105,6 +99,18 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
         model = Recipe
 
+    def get_ingredients(self, obj):
+        """Возвращает ингредиенты в формате, ожидаемом фронтендом"""
+        return [
+            {
+                'id': ia.ingredient.id,
+                'name': ia.ingredient.name,
+                'measurement_unit': ia.ingredient.measurement_unit,
+                'amount': ia.amount
+            }
+            for ia in obj.recipe_amounts.all()
+        ]
+
     def get_is_favorited(self, obj):
         request = self.context.get('request')
         return Favorite.objects.filter(
@@ -120,14 +126,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         ).exists()
 
     def create_ingredients(self, ingredients, recipe):
-        IngredientAmount.objects.bulk_create([
+        IngredientAmount.objects.bulk_create(
             IngredientAmount(
                 recipe=recipe,
                 ingredient_id=ingredient['id'],
                 amount=ingredient['amount']
             )
             for ingredient in ingredients
-        ])
+        )
 
     def validate_field(self, field, model):
         data = self.initial_data.get(field)
@@ -136,7 +142,6 @@ class RecipeSerializer(serializers.ModelSerializer):
                 field: f'Для рецепта нужен хотя бы один {field}'
             })
         ids = [item if field == 'tags' else item.get('id') for item in data]
-        ids = [id for id in ids if id is not None]
         duplicates = {id for id, count in Counter(ids).items() if count > 1}
         if duplicates:
             raise serializers.ValidationError({
@@ -147,9 +152,9 @@ class RecipeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context.get('request')
         if request.method == 'POST' and not data.get('image'):
-            raise serializers.ValidationError(
-                {'image': 'У рецепта должна быть картинка'}
-            )
+            raise serializers.ValidationError({
+                'image': 'У рецепта должна быть картинка'
+            })
         tags_data = self.validate_field('tags', Tag)
         data['tags'] = tags_data
         ingredients_data = self.validate_field('ingredients', Ingredient)
@@ -157,41 +162,23 @@ class RecipeSerializer(serializers.ModelSerializer):
             {'id': item['id'], 'amount': item['amount']}
             for item in ingredients_data
         ]
-
         return data
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
         tags_data = validated_data.pop('tags')
         recipe = super().create(validated_data)
-        if tags_data:
-            recipe.tags.set(tags_data)
-        if ingredients_data:
-            self.create_ingredients(ingredients_data, recipe)
+        recipe.tags.set(tags_data)
+        self.create_ingredients(ingredients_data, recipe)
         return recipe
 
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('ingredients', None)
         tags_data = validated_data.pop('tags', None)
-
-        if ingredients_data is not None:
-            if not isinstance(ingredients_data, list) or not all(
-                isinstance(item, dict) and 'id' in item and 'amount' in item
-                for item in ingredients_data
-            ):
-                raise serializers.ValidationError(
-                    {"ingredients": "Ожидается список"
-                     "объектов с 'id' и 'amount'"}
-                )
-
         instance = super().update(instance, validated_data)
-
-        if tags_data is not None:
-            instance.tags.set(tags_data)
-
-        if ingredients_data is not None:
-            instance.ingredientamount_set.all().delete()
-            self.create_ingredients(ingredients_data, instance)
+        instance.tags.set(tags_data)
+        instance.recipe_amounts.all().delete()
+        self.create_ingredients(ingredients_data, instance)
 
         return instance
 
