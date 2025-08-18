@@ -189,6 +189,9 @@ class IngredientAmount(models.Model):
             models.UniqueConstraint(fields=['ingredient', 'recipe'],
                                     name='unique ingredients recipe',)
         ]
+    
+    def __str__(self):
+        return f"{self.ingredient.name} - {self.amount} {self.ingredient.measurement_unit}"
 
 
 class RecipeUserRelation(models.Model):

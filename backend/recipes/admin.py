@@ -89,7 +89,13 @@ class IngredientAmountInline(admin.TabularInline):
 
     @admin.display(description='Единица измерения')
     def get_measurement_unit(self, obj):
-        return obj.ingredient.measurement_unit if obj.ingredient else ''
+        if obj.id:
+            return obj.ingredient.measurement_unit
+        ingredient_id = self.form.initial.get('ingredient')
+        if ingredient_id:
+            ingredient = Ingredient.objects.filter(id=ingredient_id).first()
+            return ingredient.measurement_unit if ingredient else ''
+        return ''
 
 
 class RecipeAdmin(admin.ModelAdmin):
