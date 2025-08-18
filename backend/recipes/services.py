@@ -1,13 +1,14 @@
 from datetime import date
+
 from django.db.models import Sum
 from django.template.loader import render_to_string
-from django.utils.dateformat import format
 from recipes.models import IngredientAmount, ShoppingCart
 
 
 def generate_shopping_list(user):
-    recipes_in_cart = user.shopping_carts.all().values_list('recipe', flat=True)
-    
+    recipes_in_cart = user.shopping_carts.all().values_list(
+        'recipe', flat=True)
+
     ingredients = (
         IngredientAmount.objects
         .filter(recipe__in=recipes_in_cart)

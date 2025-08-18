@@ -1,9 +1,10 @@
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import mark_safe
-from django import forms
-from .models import (Favorite, Ingredient, Recipe, ShoppingCart, Subscribe,
-                     Tag, UserProfile, IngredientAmount)
+
+from .models import (Favorite, Ingredient, IngredientAmount, Recipe,
+                     ShoppingCart, Subscribe, Tag, UserProfile)
 
 
 class CountRecipesMixin:
@@ -77,11 +78,13 @@ class IngredientAdmin(CountRecipesMixin, admin.ModelAdmin):
     search_fields = ('name__icontains', 'measurement_unit')
     list_filter = ('measurement_unit',)
 
+
 class IngredientAmountInline(admin.TabularInline):
     model = IngredientAmount
     extra = 1
     fields = ('ingredient', 'amount')
     autocomplete_fields = ['ingredient']
+
 
 class RecipeAdminForm(forms.ModelForm):
     class Meta:
@@ -91,12 +94,14 @@ class RecipeAdminForm(forms.ModelForm):
             'tags': forms.CheckboxSelectMultiple(),
             'image': forms.FileInput(attrs={'accept': 'image/*'})
         }
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.image:
             self.fields['image'].help_text = mark_safe(
-                f'<img src="{self.instance.image.url}" width="200" height="200" />')
+                f'<img src="{self.instance.image.url}"'
+                'width="200" height="200" />')
+
 
 class RecipeAdmin(admin.ModelAdmin):
     form = RecipeAdminForm
