@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import mark_safe
-
+from django import forms
 from .models import (Favorite, Ingredient, Recipe, ShoppingCart, Subscribe,
-                     Tag, UserProfile)
+                     Tag, UserProfile, IngredientAmount)
 
 
 class CountRecipesMixin:
@@ -77,8 +77,30 @@ class IngredientAdmin(CountRecipesMixin, admin.ModelAdmin):
     search_fields = ('name__icontains', 'measurement_unit')
     list_filter = ('measurement_unit',)
 
+class IngredientAmountInline(admin.TabularInline):
+    model = IngredientAmount
+    extra = 1
+    fields = ('ingredient', 'amount')
+    autocomplete_fields = ['ingredient']
+
+class RecipeAdminForm(forms.ModelForm):
+    class Meta:
+        model = Recipe
+        fields = '__all__'
+        widgets = {
+            'tags': forms.CheckboxSelectMultiple(),
+            'image': forms.FileInput(attrs={'accept': 'image/*'})
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.image:
+            self.fields['image'].help_text = mark_safe(
+                f'<img src="{self.instance.image.url}" width="200" height="200" />')
 
 class RecipeAdmin(admin.ModelAdmin):
+    form = RecipeAdminForm
+    inlines = [IngredientAmountInline]
     list_display = (
         'id', 'name', 'get_author_username',
         'cooking_time', 'get_ingredients',
@@ -93,7 +115,6 @@ class RecipeAdmin(admin.ModelAdmin):
             return mark_safe(
                 f'<img src="{recipe.image.url}" width="50" height="50" />')
         return "Нет изображения"
-    image_tag.short_description = 'Изображение'
 
     @admin.display(
         description='логин')

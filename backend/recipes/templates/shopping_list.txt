@@ -1,10 +1,10 @@
 Список покупок
-Дата: {{ date|date:"d.m.Y" }}
+Дата: {{ date }}
 
 Ингредиенты:
 {% for item in ingredients %}
-{{ forloop.counter }}. {{ item.name|capfirst }} - {{ item.total }} {{ item.unit }}{% endfor %}
+{{ forloop.counter }}. {{ item.name|capfirst }} - {{ item.total }} ({{ item.unit }}){% endfor %}
 
 Рецепты:
 {% for recipe in recipes %}
-- {{ recipe.recipe__name }} (автор: {{ recipe.recipe__author__username }}){% endfor %}
+- {{ recipe.recipe__name }} @{{ recipe.recipe__author__username }}{% endfor %}

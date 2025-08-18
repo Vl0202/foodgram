@@ -50,10 +50,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientAmountSerializer(serializers.ModelSerializer):
-    id = serializers.PrimaryKeyRelatedField(
-        queryset=Ingredient.objects.all(),
-        source='ingredient',
-    )
+    id = serializers.IntegerField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit'
@@ -71,7 +68,11 @@ class RecipeSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     author = UserProfileSerializer(read_only=True)
-    ingredients = serializers.SerializerMethodField()
+    ingredients = IngredientAmountSerializer(
+        source='recipe_amounts',
+        many=True,
+        read_only=True,
+    )
     image = Base64ImageField()
     tags = TagSerializer(
         read_only=True,
@@ -98,18 +99,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             'is_in_shopping_cart'
         )
         model = Recipe
-
-    def get_ingredients(self, obj):
-        """Возвращает ингредиенты в формате, ожидаемом фронтендом"""
-        return [
-            {
-                'id': ia.ingredient.id,
-                'name': ia.ingredient.name,
-                'measurement_unit': ia.ingredient.measurement_unit,
-                'amount': ia.amount
-            }
-            for ia in obj.recipe_amounts.all()
-        ]
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
@@ -175,12 +164,11 @@ class RecipeSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('ingredients', None)
         tags_data = validated_data.pop('tags', None)
-        instance = super().update(instance, validated_data)
         instance.tags.set(tags_data)
         instance.recipe_amounts.all().delete()
         self.create_ingredients(ingredients_data, instance)
 
-        return instance
+        return super().update(instance, validated_data)
 
 
 class SubscribedUserSerializer(UserProfileSerializer):
