@@ -1,7 +1,5 @@
-from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.db import models
 from django.utils.html import mark_safe
 
 from .models import (Favorite, Ingredient, IngredientAmount, Recipe,
@@ -76,26 +74,15 @@ class IngredientAdmin(CountRecipesMixin, admin.ModelAdmin):
     list_display = (
         'id', 'name', 'measurement_unit', *CountRecipesMixin.list_display
     )
-    search_fields = ('name__icontains', 'measurement_unit')
+    search_fields = ('name', 'measurement_unit')
     list_filter = ('measurement_unit',)
 
 
 class IngredientAmountInline(admin.TabularInline):
     model = IngredientAmount
     extra = 1
-    fields = ('ingredient', 'amount', 'get_measurement_unit')
-    readonly_fields = ('get_measurement_unit',)
+    fields = ('ingredient', 'amount')
     autocomplete_fields = ['ingredient']
-
-    @admin.display(description='Единица измерения')
-    def get_measurement_unit(self, obj):
-        if obj.id:
-            return obj.ingredient.measurement_unit
-        ingredient_id = self.form.initial.get('ingredient')
-        if ingredient_id:
-            ingredient = Ingredient.objects.filter(id=ingredient_id).first()
-            return ingredient.measurement_unit if ingredient else ''
-        return ''
 
 
 class RecipeAdmin(admin.ModelAdmin):
@@ -107,17 +94,6 @@ class RecipeAdmin(admin.ModelAdmin):
     )
     list_filter = ('tags', 'author__username',)
     search_fields = ('name__icontains', 'author__username__icontains')
-    formfield_overrides = {
-        models.ImageField: {
-            'widget': forms.FileInput(attrs={'accept': 'image/*'})}
-    }
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        if obj and obj.image:
-            form.base_fields['image'].help_text = mark_safe(
-                f'<img src="{obj.image.url}" width="200" height="200" />')
-        return form
 
     @admin.display(description='Изображение')
     def image_tag(self, recipe):
